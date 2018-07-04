@@ -1,0 +1,23 @@
+{
+  "name": "ambrosio",
+  "version": "2.0.0",
+  "description": "A bot for discord",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "iamkryfor",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.3.2",
+    "node-opus": "^0.3.0",
+    "telegraf": "^3.21.2",
+    "underscore": "^1.9.1",
+    "uws": "^10.148.1",
+    "ytdl-core": "^0.20.4",
+    "zlib-sync": "^0.1.4"
+  },
+  "devDependencies": {
+    "eslint": "^5.0.1"
+  }
+}

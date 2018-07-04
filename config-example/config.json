@@ -1,0 +1,11 @@
+{
+    "discordToken": "YOUR-DISCORD-TOKEN",
+    "prefix": "PREFIX FOR YOUR COMMANDS",
+    "defaultColor": "DECIMAL COLOR CODE FOR YOUR EMBED MESSAGES",
+    "readyMessages": [
+        "with Ferreros",
+        "with You",
+        "with Kim's Nuclear Arsenal",
+        "with Chinese Food"
+    ]
+}

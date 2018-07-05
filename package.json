@@ -9,7 +9,8 @@
   "author": "iamkryfor",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^11.3.2",
+    "discord.js": "github:discordjs/discord.js",
+    "erlpack": "github:discordapp/erlpack",
     "node-opus": "^0.3.0",
     "telegraf": "^3.21.2",
     "underscore": "^1.9.1",

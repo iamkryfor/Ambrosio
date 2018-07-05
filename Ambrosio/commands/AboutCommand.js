@@ -6,11 +6,14 @@ class AboutCommand extends Command {
     }
 
     exec(message, args) {
-        let channel = message.channel
-        const embed = this.embed.newEmbed()
-            .setTitle('About this bot')
-            .setDescription(`Ambrósio - The discord bot - is a bot created by @iamkryfor#1260 therefore if you have any problem **DO NOT** contact him at all. That's it for now, thanks!`)
-        channel.send(embed)
+        const channel = message.channel
+        const embed = {
+            title: `About this bot`,
+            description: `Ambrósio - The discord bot - is a bot created by @iamkryfor#1260 therefore if you have any problem **DO NOT** contact him at all. That's it for now, thanks!`,
+            color: this.config.get('defaultColor')
+        }
+        
+        channel.send({ embed })
     }
 }
 

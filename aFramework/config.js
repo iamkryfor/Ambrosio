@@ -29,7 +29,7 @@ class ConfigFile {
     }
 
     get(key) {
-        let splittedKey = key.split('.')
+        const splittedKey = key.split('.')
         key = this.file
         splittedKey.forEach(next => {
             if (!key) 

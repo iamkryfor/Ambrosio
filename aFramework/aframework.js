@@ -74,6 +74,7 @@ class aFramework extends Discord.Client {
                 return
             }
 
+            message.delete()
             this.commands[command].exec(message, args)
         }
     }
@@ -81,6 +82,7 @@ class aFramework extends Discord.Client {
     get logger() {
         return logger
     }
+
 }
 
 module.exports = aFramework

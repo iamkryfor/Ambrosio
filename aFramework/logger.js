@@ -13,7 +13,7 @@ module.exports = {
         return `${module.exports._getSystemTime()}[${type}] ${msg}`
     },
     _getSystemTime: function() {
-        let date = new Date()
+        const date = new Date()
 
         let hours = date.getHours()
         hours = (hours < 10 ? '0' : '') + hours

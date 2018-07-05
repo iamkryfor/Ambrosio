@@ -1,5 +1,4 @@
 const logger = require('./logger')
-const embed = require('./embed')
 
 class Command {
     constructor(command, configHandler, options = {}) {
@@ -7,7 +6,6 @@ class Command {
         this.config = configHandler.getConfigFile('config')
         this.command = command
         this.options = options
-        this.embed = new embed(this.config)
     }
 
     exec(message, args) {

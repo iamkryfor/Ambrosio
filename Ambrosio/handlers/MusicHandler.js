@@ -94,6 +94,9 @@ class MusicHandler extends EventEmitter {
     }
 
     skipMusic() {
+        if (!this.playing)
+            return
+
         if (this.queue.length === 0) {
             this.currentMusic.guildMember.voiceChannel.leave()
             this.currentMusic = {}

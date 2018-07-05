@@ -52,12 +52,16 @@ class aFramework extends Discord.Client {
         let content = message.content
         if (content.startsWith(this.prefix)) {
             content = content.substr(1).split(' ')
+            const channel = message.channel
             const command = content.shift()
             const args = content.join(' ')
             const commandObj = this.commands[command]
-            const options = commandObj.options
+            if (!commandObj) {
+                channel.send(`That command doesn't exist mate!`)
+                return
+            }
 
-            const channel = message.channel
+            const options = commandObj.options
             if (options.guildCommand && channel.type !== 'text') {
                 channel.send(`In order to execute this command you need to be inside a guild!`)
                 return

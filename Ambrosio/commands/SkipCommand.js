@@ -5,19 +5,15 @@ const Permissions = Discord.Permissions.FLAGS
 
 class PlayCommand extends Command {
     constructor(configHandler) {
-        super('play', configHandler, {
+        super('skip', configHandler, {
             guildCommand: true,
-            permissions: Permissions.MANAGE_CHANNELS,
-            needsVoice: true
+            permissions: Permissions.MANAGE_CHANNELS
         })
     }
 
     exec(message, args) {
         const guild = message.guild
-        const textChannel = message.channel
-        const guildMember = message.member
-        
-        MusicHandler.getHandler(guild, this.config).playMusic(args, textChannel, guildMember)
+        MusicHandler.getHandler(guild, this.config).skipMusic()
     }
 }
 

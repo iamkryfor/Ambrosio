@@ -1,21 +1,37 @@
 const _ = require('underscore')
 const EventEmitter = require('events')
 const ytdl = require('ytdl-core')
+const YouTube = require('simple-youtube-api')
+const yt = new YouTube('AIzaSyAvKBZ6XDNtauVMW_Hi25TGjhM72DOBY0U')
 
 const MusicHandlers = {}
 class MusicHandler extends EventEmitter {
-    constructor(guild) {
+    constructor(guild, config) {
         super()
         this.guild = guild
         this.currentMusic = {}
         this.queue = []
+        this.config = config
+
+        this.on('playing', this.isPlaying)
+        this.on('added', this.addedToQueue)
 
         MusicHandlers[guild.id] = this
     }
 
     playMusic(query, textChannel, guildMember) {
         if (!ytdl.validateURL(query)) {
-            // search youtube
+            const playlistRegex = /(?:https:\/\/www\.youtube\.com\/playlist\?list=)([0-9A-z]+)+(?:.*)/gi.exec(query)
+
+            yt.searchVideos(query, 1, { regionCode: 'PT' }).then(results => {
+                if (results.length < 0) {
+                    this.emit('error', 'No matching results')
+                    return
+                }
+
+                const res = results[0]
+                this.playMusic(res.url, textChannel, guildMember)
+            }).catch(error => this.emit('error', error))
             return
         }
 
@@ -40,6 +56,7 @@ class MusicHandler extends EventEmitter {
                 return
             }
             
+            this.currentMusic = musicInfo
             this.playFromInfo(musicInfo)
         })
     }
@@ -56,13 +73,7 @@ class MusicHandler extends EventEmitter {
             })
 
             info.dispatcher.on('end', () => {
-                if (this.queue.length === 0) {
-                    this.currentMusic = {}
-                    voiceChannel.leave()
-                    return
-                }
-
-                this.playFromInfo(this.queue.shift())
+                this.skipMusic()
             })
 
             info.dispatcher.on('error', () => {
@@ -75,11 +86,68 @@ class MusicHandler extends EventEmitter {
     }
 
     skipMusic() {
+        if (this.queue.length === 0) {
+            this.currentMusic.guildMember.voiceChannel.leave()
+            this.currentMusic = {}
+            return
+        }
 
+        this.playFromInfo(this.queue.shift())
     }
 
     endMusic() {
+        this.queue = {}
+        this.skipMusic()
+    }
 
+    isPlaying(info) {
+        const memberAvatar = info.guildMember.user.avatarURL({ format: 'png' })
+        info.textChannel.send({
+            embed: {
+                title: info.title,
+                description: `*Now Playing **(${MusicHandler._secToHMS(info.length)})***`,
+                color: this.config.get('defaultColor'),
+                footer: {
+                    icon_url: memberAvatar,
+                    text: `from ${info.guildMember.user.username}`
+                },
+                thumbnail: {
+                    url: info.thumbnail
+                },
+                author: {
+                    name: info.author.name,
+                    url: info.author.url,
+                    icon_url: info.author.avatar
+                }
+            }
+        }).then(message => {
+            message.delete({ timeout: info.length * 1000 }).catch(error => {})
+        })
+    }
+
+    addedToQueue(info) {
+        const memberAvatar = info.guildMember.user.avatarURL({ format: 'png' })
+        info.textChannel.send({
+            embed: {
+                title: info.title,
+                description: `*Added to the queue!\nLength: **${MusicHandler._secToHMS(info.length)}***`,
+                color: this.config.get('defaultColor'),
+                footer: {
+                    icon_url: memberAvatar,
+                    text: `by ${info.guildMember.user.username}`
+                },
+                thumbnail: {
+                    url: info.thumbnail
+                },
+                author: {
+                    name: info.author.name,
+                    url: info.author.url,
+                    icon_url: info.author.avatar
+                }
+            }
+        }).then(message => {
+            message.delete({ timeout: 10000 }).catch(error => {})
+        })
     }
 
     get playing() {
@@ -100,11 +168,11 @@ class MusicHandler extends EventEmitter {
         return `${hours}:${min}:${sec}`
     }
     
-    static getHandler(guild) {
+    static getHandler(guild, config) {
         if (MusicHandlers[guild.id])
             return MusicHandlers[guild.id]
 
-        return new MusicHandler(guild)
+        return new MusicHandler(guild, config)
     }
 }
 

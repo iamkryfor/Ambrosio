@@ -19,18 +19,25 @@ class MusicHandler extends EventEmitter {
         MusicHandlers[guild.id] = this
     }
 
-    playMusic(query, textChannel, guildMember) {
+    playMusic(query, textChannel, guildMember, isPlaylist = false) {
         if (!ytdl.validateURL(query)) {
-            const playlistRegex = /(?:https:\/\/www\.youtube\.com\/playlist\?list=)([0-9A-z]+)+(?:.*)/gi.exec(query)
-
-            this.yt.searchVideos(query, 1, { regionCode: 'PT' }).then(results => {
+            this.yt.search(query, 7, { regionCode: 'PT' }).then(results => {
                 if (results.length < 0) {
                     this.emit('error', 'No matching results')
                     return
                 }
 
                 const res = results[0]
-                this.playMusic(res.url, textChannel, guildMember)
+                if (res.type === 'video') {
+                    this.playMusic(res.url, textChannel, guildMember)
+                    return
+                } else if (res.type === 'playlist') {
+                    this.yt.search(null, 10, { playlistId: res.id }).then(pl => {
+                        pl.forEach(video => {
+                            this.playMusic(video.url, textChannel, guildMember, true)
+                        })
+                    })
+                }
             }).catch(error => this.emit('error', error))
             return
         }
@@ -52,7 +59,8 @@ class MusicHandler extends EventEmitter {
 
             if (this.playing) {
                 this.queue.push(musicInfo)
-                this.emit('added', musicInfo)
+                if (!isPlaylist)
+                    this.emit('added', musicInfo)
                 return
             }
             
@@ -96,7 +104,7 @@ class MusicHandler extends EventEmitter {
     }
 
     endMusic() {
-        this.queue = {}
+        this.queue = []
         this.skipMusic()
     }
 

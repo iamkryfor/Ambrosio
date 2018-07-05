@@ -57,7 +57,7 @@ class aFramework extends Discord.Client {
             const args = content.join(' ')
             const commandObj = this.commands[command]
             if (!commandObj) {
-                channel.send(`That command doesn't exist mate!`)
+                channel.send(`That command doesn't exist!`)
                 return
             }
 

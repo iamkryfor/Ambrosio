@@ -2,7 +2,6 @@ const _ = require('underscore')
 const EventEmitter = require('events')
 const ytdl = require('ytdl-core')
 const YouTube = require('simple-youtube-api')
-const yt = new YouTube('AIzaSyAvKBZ6XDNtauVMW_Hi25TGjhM72DOBY0U')
 
 const MusicHandlers = {}
 class MusicHandler extends EventEmitter {
@@ -12,6 +11,7 @@ class MusicHandler extends EventEmitter {
         this.currentMusic = {}
         this.queue = []
         this.config = config
+        this.yt = new YouTube(this.config.get('youtubeToken'))
 
         this.on('playing', this.isPlaying)
         this.on('added', this.addedToQueue)
@@ -23,7 +23,7 @@ class MusicHandler extends EventEmitter {
         if (!ytdl.validateURL(query)) {
             const playlistRegex = /(?:https:\/\/www\.youtube\.com\/playlist\?list=)([0-9A-z]+)+(?:.*)/gi.exec(query)
 
-            yt.searchVideos(query, 1, { regionCode: 'PT' }).then(results => {
+            this.yt.searchVideos(query, 1, { regionCode: 'PT' }).then(results => {
                 if (results.length < 0) {
                     this.emit('error', 'No matching results')
                     return

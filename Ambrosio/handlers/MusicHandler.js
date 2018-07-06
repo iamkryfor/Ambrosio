@@ -18,7 +18,7 @@ class MusicHandler extends EventEmitter {
         this.on('playing', this.isPlaying)
         this.on('added', this.addedToQueue)
         this.on('playlist_added', this.playlistAddedToQueue)
-        this.on('error', () => {}) // modify this later
+        this.on('error', console.log) // modify this later
 
         MusicHandlers[guild.id] = this
     }
@@ -30,22 +30,14 @@ class MusicHandler extends EventEmitter {
             if ((playlistURL || playlistURI) && this.sp) {
                 const userId = playlistURL ? playlistURL[1] : playlistURI[1]
                 const playlistId = playlistURL ? playlistURL[2] : playlistURI[2]
-                this.sp.getPlaylist(userId, playlistId).then(data => {
-                    const name = data.body.name
-                    const image = data.body.images[0].url
-                    const owner = {
-                        name: data.body.owner.display_name,
-                        url: data.body.owner.href
-                    }
-
-                    const tracks = data.body.tracks.items
+                this.sp.getPlaylistTracks(userId, playlistId, { limit: 50 }).then(data => {
+                    const tracks = data.body.items
                     tracks.forEach(track => this.playMusic(`${track.track.artists[0].name} - ${track.track.name}`, textChannel, guildMember, true))
-                    this.emit('playlist_added', { name, image, owner, tracks, textChannel, guildMember })
                 }).catch(err => {
                     console.log(err)
                 })
             } else {
-                this.yt.search(query, 7, { regionCode: 'PT' }).then(results => {
+                this.yt.search(query, 1, { regionCode: 'PT' }).then(results => {
                     if (results.length < 0 || !results[0]) {
                         this.emit('error', 'No matching results')
                         return

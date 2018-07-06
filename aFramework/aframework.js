@@ -1,6 +1,8 @@
 const Discord = require('discord.js')
 const fs = require('fs')
 const path = require('path')
+const sqlite3 = require('sqlite3')
+const db = new sqlite3.Database('database.sqlite3')
 const { Config } = require('./config')
 const logger = require('./logger')
 
@@ -12,6 +14,7 @@ class aFramework extends Discord.Client {
         this.config = this.configHandler.getConfigFile('config')
         this.prefix = this.config.get('prefix')
         this.enableCommands = (commandsFolder || !fs.existsSync(commandsFolder)) ? commandsFolder : false
+
         // load all commands
         this._loadCommands()
 
@@ -56,29 +59,38 @@ class aFramework extends Discord.Client {
             const command = content.shift()
             const args = content.join(' ')
             const commandObj = this.commands[command]
+            if (channel.type === 'text')
+                message.delete()
+
             if (!commandObj) {
-                channel.send(`That command doesn't exist!`)
+                aFramework._sendError(channel, `That command doesn't exist!`)
                 return
             }
 
             const options = commandObj.options
             if (options.guildCommand && channel.type !== 'text') {
-                channel.send(`In order to execute this command you need to be inside a guild!`)
+                aFramework._sendError(channel, `In order to execute this command you need to be inside a guild!`)
                 return
             }
 
             const member = message.member
             if (options.permissions && !member.hasPermission(options.permissions)) {
-                channel.send(`You don't have permissions to execute this command!`)
+                aFramework._sendError(channel, `You don't have permissions to execute this command!`)
                 return
             }
 
             if (options.needsVoice && !member.voiceChannel) {
-                channel.send(`You need to be in a voice channel in order to execute this command!`)
+                aFramework._sendError(channel, `You need to be in a voice channel in order to execute this command!`)
                 return
             }
 
-            message.delete()
+            const argsSplit = args.split(' ')
+            const argsLength = (argsSplit.length > 0 && argsSplit[0] === '') ? 0 : argsSplit.length
+            if (options.minArgs && argsLength < options.minArgs) {
+                aFramework._sendError(channel, `This command needs at least ${options.minArgs} argument(s) to be executed!`)
+                return
+            }
+
             this.commands[command].exec(message, args)
         }
     }
@@ -87,6 +99,15 @@ class aFramework extends Discord.Client {
         return logger
     }
 
+    static _sendError(channel, error) {
+        channel.send(`[ERROR] ${error}`).then(message => { 
+            message.delete({ timeout: 7000 }).catch(error => {})
+        })
+    }
+
+    static getDatabase() {
+        return db
+    }
 }
 
 module.exports = aFramework

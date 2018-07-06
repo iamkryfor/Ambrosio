@@ -8,7 +8,8 @@ class PlayCommand extends Command {
         super('play', configHandler, {
             guildCommand: true,
             permissions: Permissions.MANAGE_CHANNELS,
-            needsVoice: true
+            needsVoice: true,
+            minArgs: 1
         })
     }
 

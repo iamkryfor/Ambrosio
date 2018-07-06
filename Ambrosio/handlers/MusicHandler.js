@@ -155,7 +155,54 @@ class MusicHandler extends EventEmitter {
                 }
             }
         }).then(message => {
-            message.delete({ timeout: 10000 }).catch(error => {})
+            message.delete({ timeout: 7000 }).catch(error => {})
+        })
+    }
+
+    shuffleQueue(channel) {
+        if (this.queue.length < 2) {
+            channel.send('Cannot suffle this queue!').then(message => {
+                message.delete({ timeout: 7000 }).catch(err => {})
+            })
+
+            return
+        }
+
+        this.queue = _.shuffle(this.queue)
+        channel.send('The queue was shuffled!').then(message => {
+            message.delete({ timeout: 7000 }).catch(err => {})
+        })
+    }
+
+    getQueue(channel) {
+        if (this.queue.length === 0) {
+            channel.send('The queue is empty!').then(message => {
+                message.delete({ timeout: 7000 }).catch(err => {})
+            })
+
+            return
+        }
+
+        const fields = []
+        this.queue.forEach((info, id) => {
+            fields[id] = {
+                name: info.title,
+                value: info.author.name
+            }
+        })
+
+        channel.send({
+            embed: {
+                title: `${channel.guild.name}'s Queue`,
+                description: `This queue has ${this.queue.length} music(s)`,
+                color: this.config.get('defaultColor'),
+                thumbnail: {
+                    url: this.queue[0].thumbnail
+                },
+                fields
+            }
+        }).then(message => {
+            message.delete({ timeout: 7000 }).catch(error => {})
         })
     }
 

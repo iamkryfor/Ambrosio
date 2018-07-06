@@ -23,6 +23,26 @@ class TamagochiHandler extends EventEmitter {
             })
         }
 
+        this.interval = setInterval(() => {
+            if (user.presence.status === 'offline')
+                return
+
+            if (this.hunger_level === 100 && this.strength_level === 0) {
+                TamagochiHandler._sendTamagochiMessage(user.dmChannel, 'Your tamagochi died from hunger!')
+                this.hunger_level = 0.0
+                this.sadness_level = 0.0
+                this.strength_level = 0.0
+                return
+            } else {
+                this.hunger_level += 10
+                this.sadness_level += 10
+                if (this.hunger_level > 70) 
+                    this.strength_level -= 5
+            }
+
+            this.saveDB()
+        }, 120 * 1000)
+
         tamagochis[user.id] = this
     }
 
@@ -36,24 +56,43 @@ class TamagochiHandler extends EventEmitter {
     }
 
     feed(channel) {
-        if (this.hunger_level === 0)
+        if (this.hunger_level === 0) {
+            TamagochiHandler._sendTamagochiMessage(channel, `I'm not hungry fella. Try later!`)
             return
+        }
 
-        channel.send('meahm meahm')
+        this.hunger_level -= TamagochiHandler._calculateVar(this.hunger_level)
+        this.saveDB()
+        TamagochiHandler._sendTamagochiMessage(channel, 'MEAHM. Such a nice steak!')
     }
 
     play(channel) {
-        if (this.sadness_level === 0)
+        if (this.hunger_level > 80) {
+            TamagochiHandler._sendTamagochiMessage(channel, 'I WANT TO EAT!!')
             return
+        }
 
-        channel.send('yeeeeee')  
+        if (this.sadness_level !== 0) {
+            this.sadness_level -= TamagochiHandler._calculateVar(this.sadness_level)
+            this.saveDB()
+        }
+
+        TamagochiHandler._sendTamagochiMessage(channel, 'The movie was nice.')
     }
 
     train(channel) {
-        if (this.strength_level === 100)
+        if (this.hunger_level > 80) {
+            TamagochiHandler._sendTamagochiMessage(channel, 'I WANT TO EAT!!')
             return
+        }
 
-        channel.send('baca')
+        if (this.strength_level !== 100) {
+            console.log(TamagochiHandler._calculateVar(this.strength_level))
+            this.strength_level += TamagochiHandler._calculateVar(this.strength_level)
+            this.saveDB()
+        }
+
+        TamagochiHandler._sendTamagochiMessage(channel, `BACA. BACA. No one can defeat me now!`)
     }
 
     sendTamagochiInfo(channel) {
@@ -80,6 +119,16 @@ class TamagochiHandler extends EventEmitter {
                     }
                 ]
             }
+        })
+    }
+
+    static _calculateVar(a) {
+        return Math.floor((Math.random() * ((a * 0.3) - (a * 0.1))) + 5)
+    }
+    
+    static _sendTamagochiMessage(channel, m) {
+        channel.send(`***TAMAGOCHI:*** ${m}`).then(message => {
+            message.delete({ timeout: 7000 }).catch(err => {})
         })
     }
 

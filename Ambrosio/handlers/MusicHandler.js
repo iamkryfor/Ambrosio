@@ -17,7 +17,6 @@ class MusicHandler extends EventEmitter {
 
         this.on('playing', this.isPlaying)
         this.on('added', this.addedToQueue)
-        this.on('playlist_added', this.playlistAddedToQueue)
         this.on('error', console.log) // modify this later
 
         MusicHandlers[guild.id] = this
@@ -33,9 +32,7 @@ class MusicHandler extends EventEmitter {
                 this.sp.getPlaylistTracks(userId, playlistId, { limit: 50 }).then(data => {
                     const tracks = data.body.items
                     tracks.forEach(track => this.playMusic(`${track.track.artists[0].name} - ${track.track.name}`, textChannel, guildMember, true))
-                }).catch(err => {
-                    console.log(err)
-                })
+                }).catch(err => this.emit('error', err))
             } else {
                 this.yt.search(query, 1, { regionCode: 'PT' }).then(results => {
                     if (results.length < 0 || !results[0]) {
@@ -53,7 +50,7 @@ class MusicHandler extends EventEmitter {
                             }) 
                         })
                     }
-                }).catch(error => this.emit('error', error))
+                }).catch(err => this.emit('error', err))
             }
 
             return
@@ -83,6 +80,7 @@ class MusicHandler extends EventEmitter {
                 this.queue.push(musicInfo)
                 if (!isPlaylist)
                     this.emit('added', musicInfo)
+                
                 return
             }
             
@@ -94,7 +92,6 @@ class MusicHandler extends EventEmitter {
     playFromInfo(info) {
         const voiceChannel = info.guildMember.voiceChannel
         voiceChannel.join().then(connection => {
-            info.connection = connection
             info.stream = ytdl(info.url, { fiter: 'audioonly' })
             info.dispatcher = connection.play(info.stream, { volume: false, passes: 3 })
 

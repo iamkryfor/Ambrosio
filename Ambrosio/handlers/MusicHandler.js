@@ -97,16 +97,17 @@ class MusicHandler extends EventEmitter {
             info.stream = ytdl(info.url, { fiter: 'audioonly' })
             info.dispatcher = connection.play(info.stream, { volume: false, passes: 3 })
 
-            info.dispatcher.once('start', () => {
+            info.dispatcher.on('start', () => {
                 this.currentMusic = info
                 this.emit('playing', info)
             })
 
-            info.dispatcher.once('end', () => {
+            info.dispatcher.on('end', () => {
                 this.skipMusic()
             })
 
             info.dispatcher.on('error', () => {
+                info.dispatcher.emit('end')
                 this.emit('error', 'Dispatcher error!')
             })
         }).catch(error => {
@@ -119,13 +120,11 @@ class MusicHandler extends EventEmitter {
             return
 
         if (this.queue.length === 0) {
-            console.log('a')
             this.currentMusic.guildMember.voiceChannel.leave()
             this.currentMusic = {}
             return
         }
 
-        console.log('shifting')
         this.playFromInfo(this.queue.shift())
     }
 

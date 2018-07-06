@@ -87,7 +87,6 @@ class TamagochiHandler extends EventEmitter {
         }
 
         if (this.strength_level !== 100) {
-            console.log(TamagochiHandler._calculateVar(this.strength_level))
             this.strength_level += TamagochiHandler._calculateVar(this.strength_level)
             this.saveDB()
         }

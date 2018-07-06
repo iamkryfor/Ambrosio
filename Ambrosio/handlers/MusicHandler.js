@@ -32,8 +32,10 @@ class MusicHandler extends EventEmitter {
                     this.playMusic(res.url, textChannel, guildMember)
                     return
                 } else if (res.type === 'playlist') {
-                    this.yt.search(null, 10, { playlistId: res.id }).then(pl => {
-                        pl.forEach(video => this.playMusic(video.url, textChannel, guildMember, true))
+                    this.yt.getPlaylistByID(res.id).then(pl => {
+                        pl.getVideos(30).then(videos => {
+                            videos.forEach(video => this.playMusic(video.url, textChannel, guildMember, true))
+                        }) 
                     })
                 }
             }).catch(error => this.emit('error', error))

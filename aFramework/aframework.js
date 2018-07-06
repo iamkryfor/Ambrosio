@@ -29,7 +29,7 @@ function _setSpotifyCredentials() {
         sp.setAccessToken(token)
         isSpotifyEnabled = true
         if (!spotifyInterval)
-            spotifyInterval = setInterval(() => this._setCredentials(), expires * 1000)
+            spotifyInterval = setInterval(() => _setSpotifyCredentials(), expires * 1000)
     }).catch(err => {
         // logger here
     })

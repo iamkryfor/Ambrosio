@@ -107,7 +107,6 @@ class MusicHandler extends EventEmitter {
             })
 
             info.dispatcher.on('error', () => {
-                info.dispatcher.emit('end')
                 this.emit('error', 'Dispatcher error!')
             })
         }).catch(error => {
@@ -120,11 +119,13 @@ class MusicHandler extends EventEmitter {
             return
 
         if (this.queue.length === 0) {
+            console.log('a')
             this.currentMusic.guildMember.voiceChannel.leave()
             this.currentMusic = {}
             return
         }
 
+        console.log('shifting')
         this.playFromInfo(this.queue.shift())
     }
 

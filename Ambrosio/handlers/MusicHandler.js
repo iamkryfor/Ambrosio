@@ -1,7 +1,7 @@
 const _ = require('underscore')
 const EventEmitter = require('events')
 const ytdl = require('ytdl-core')
-const YouTube = require('simple-youtube-api')
+const aFramework = require('../../aFramework/aframework')
 
 const MusicHandlers = {}
 class MusicHandler extends EventEmitter {
@@ -11,38 +11,68 @@ class MusicHandler extends EventEmitter {
         this.currentMusic = {}
         this.queue = []
         this.config = config
-        this.yt = new YouTube(this.config.get('youtubeToken'))
+
+        this.yt = aFramework.getYoutube()
+        this.sp = aFramework.getSpotify()
 
         this.on('playing', this.isPlaying)
         this.on('added', this.addedToQueue)
+        this.on('playlist_added', this.playlistAddedToQueue)
+        this.on('error', () => {}) // modify this later
 
         MusicHandlers[guild.id] = this
     }
 
     playMusic(query, textChannel, guildMember, isPlaylist = false) {
         if (!ytdl.validateURL(query)) {
-            this.yt.search(query, 7, { regionCode: 'PT' }).then(results => {
-                if (results.length < 0) {
-                    this.emit('error', 'No matching results')
-                    return
-                }
+            const playlistURL = /(?:https:\/\/open\.spotify\.com\/user\/)([A-z0-9]+)(?:\/playlist\/)([A-z0-9]+)/gi.exec(query)
+            const playlistURI = /(?:spotify:user:)([A-z0-9]+)(?::playlist:)([A-z0-9]+)/gi.exec(query)
+            if ((playlistURL || playlistURI) && this.sp) {
+                const userId = playlistURL ? playlistURL[1] : playlistURI[1]
+                const playlistId = playlistURL ? playlistURL[2] : playlistURI[2]
+                this.sp.getPlaylist(userId, playlistId).then(data => {
+                    const name = data.body.name
+                    const image = data.body.images[0].url
+                    const owner = {
+                        name: data.body.owner.display_name,
+                        url: data.body.owner.href
+                    }
 
-                const res = results[0]
-                if (res.type === 'video') {
-                    this.playMusic(res.url, textChannel, guildMember)
-                    return
-                } else if (res.type === 'playlist') {
-                    this.yt.getPlaylistByID(res.id).then(pl => {
-                        pl.getVideos(30).then(videos => {
-                            videos.forEach(video => this.playMusic(video.url, textChannel, guildMember, true))
-                        }) 
-                    })
-                }
-            }).catch(error => this.emit('error', error))
+                    const tracks = data.body.tracks.items
+                    tracks.forEach(track => this.playMusic(`${track.track.artists[0].name} - ${track.track.name}`, textChannel, guildMember, true))
+                    this.emit('playlist_added', { name, image, owner, tracks, textChannel, guildMember })
+                }).catch(err => {
+                    console.log(err)
+                })
+            } else {
+                this.yt.search(query, 7, { regionCode: 'PT' }).then(results => {
+                    if (results.length < 0 || !results[0]) {
+                        this.emit('error', 'No matching results')
+                        return
+                    }
+    
+                    const res = results[0]
+                    if (res.type === 'video') {
+                        this.playMusic(res.url, textChannel, guildMember, isPlaylist)
+                    } else if (res.type === 'playlist') {
+                        this.yt.getPlaylistByID(res.id).then(pl => {
+                            pl.getVideos(30).then(videos => {
+                                videos.forEach(video => this.playMusic(video.url, textChannel, guildMember, true))
+                            }) 
+                        })
+                    }
+                }).catch(error => this.emit('error', error))
+            }
+
             return
         }
 
         ytdl.getInfo(query, (err, info) => {
+            if (err) {
+                // send error message
+                return
+            }
+
             const musicInfo = {
                 url: query,
                 title: info.title,
@@ -132,7 +162,7 @@ class MusicHandler extends EventEmitter {
                 }
             }
         }).then(message => {
-            message.delete({ timeout: info.length * 1000 }).catch(error => {})
+            message.delete({ timeout: info.length * 1000 }).catch(err => {})
         })
     }
 
@@ -157,7 +187,31 @@ class MusicHandler extends EventEmitter {
                 }
             }
         }).then(message => {
-            message.delete({ timeout: 7000 }).catch(error => {})
+            message.delete({ timeout: 7000 }).catch(err => {})
+        })
+    }
+
+    playlistAddedToQueue(info) {
+        const memberAvatar = info.guildMember.user.avatarURL({ format: 'png' })
+        info.textChannel.send({
+            embed: {
+                title: info.name,
+                description: `*Playlist added to the queue!*`,
+                color: this.config.get('defaultColor'),
+                footer: {
+                    icon_url: memberAvatar,
+                    text: `by ${info.guildMember.user.username}`
+                },
+                thumbnail: {
+                    url: info.image
+                },
+                author: {
+                    name: info.owner.name,
+                    url: info.owner.url
+                }
+            }
+        }).then(message => {
+            message.delete({ timeout: 7000 }).catch(err => {})
         })
     }
 
@@ -176,7 +230,7 @@ class MusicHandler extends EventEmitter {
         })
     }
 
-    getQueue(channel) {
+    getQueue(channel, queuePage = 1) {
         if (this.queue.length === 0) {
             channel.send('The queue is empty!').then(message => {
                 message.delete({ timeout: 7000 }).catch(err => {})
@@ -185,11 +239,26 @@ class MusicHandler extends EventEmitter {
             return
         }
 
+        const embedMax = 5
+        const pages = Math.ceil(this.queue.length / embedMax)
+        if (queuePage > pages) 
+            queuePage = 1
+
+        let offset = 0
+        for(let i = 1; i < queuePage; ++i)
+            offset += 5
+
+        let j = 0
         const fields = []
         this.queue.forEach((info, id) => {
-            fields[id] = {
-                name: info.title,
-                value: info.author.name
+            const number = id + 1
+            if (number <= (embedMax + offset) && id >= offset) {
+                fields[j] = {
+                    name: info.title,
+                    value: info.author.name
+                }
+
+                ++j
             }
         })
 
@@ -198,13 +267,16 @@ class MusicHandler extends EventEmitter {
                 title: `${channel.guild.name}'s Queue`,
                 description: `This queue has ${this.queue.length} music(s)`,
                 color: this.config.get('defaultColor'),
+                footer: {
+                    text: `Page ${queuePage} of ${pages}`
+                },
                 thumbnail: {
                     url: this.queue[0].thumbnail
                 },
                 fields
             }
         }).then(message => {
-            message.delete({ timeout: 7000 }).catch(error => {})
+            message.delete({ timeout: 15000 }).catch(error => {})
         })
     }
 

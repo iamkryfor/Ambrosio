@@ -2,16 +2,46 @@ const Discord = require('discord.js')
 const fs = require('fs')
 const path = require('path')
 const sqlite3 = require('sqlite3')
-const db = new sqlite3.Database('database.sqlite3')
 const { Config } = require('./config')
 const logger = require('./logger')
+const YouTube = require('simple-youtube-api')
+const SpotifyWebApi = require('spotify-web-api-node')
+
+const ConfigHandler = new Config('config')
+const MainConfig = ConfigHandler.getConfigFile('config')
+const db = new sqlite3.Database('database.sqlite3')
+
+const yt = new YouTube(MainConfig.get('youtubeToken'))
+const sp = new SpotifyWebApi({
+    clientId: MainConfig.get('spotify.clientId'),
+    clientSecret: MainConfig.get('spotify.clientSecret')
+})
+
+let spotifyInterval
+let isSpotifyEnabled = false
+_setSpotifyCredentials()
+
+function _setSpotifyCredentials() {
+    sp.clientCredentialsGrant().then(data => {
+        const expires = data.body.expires_in
+        const token = data.body.access_token
+        // logger here
+        sp.setAccessToken(token)
+        isSpotifyEnabled = true
+        if (!spotifyInterval)
+            spotifyInterval = setInterval(() => this._setCredentials(), expires * 1000)
+    }).catch(err => {
+        // logger here
+    })
+}
+
 
 class aFramework extends Discord.Client {
     constructor(commandsFolder, opts) {
         super(opts)
         // initialize configuration
-        this.configHandler = new Config('config')
-        this.config = this.configHandler.getConfigFile('config')
+        this.configHandler = ConfigHandler
+        this.config = MainConfig
         this.prefix = this.config.get('prefix')
         this.enableCommands = (commandsFolder || !fs.existsSync(commandsFolder)) ? commandsFolder : false
 
@@ -59,8 +89,8 @@ class aFramework extends Discord.Client {
             const command = content.shift()
             const args = content.join(' ')
             const commandObj = this.commands[command]
-            if (channel.type === 'text')
-                message.delete()
+            if (channel.type === 'text') 
+                message.delete().catch(err => {})
 
             if (!commandObj) {
                 aFramework._sendError(channel, `That command doesn't exist!`)
@@ -107,6 +137,17 @@ class aFramework extends Discord.Client {
 
     static getDatabase() {
         return db
+    }
+
+    static getYoutube() {
+        return yt
+    }
+
+    static getSpotify() {
+        if (!isSpotifyEnabled)
+            return false
+
+        return sp
     }
 }
 

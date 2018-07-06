@@ -34,14 +34,14 @@ class TamagochiHandler extends EventEmitter {
                 this.strength_level = 0.0
                 return
             } else {
-                this.hunger_level += 10
-                this.sadness_level += 10
+                this.hunger_level += this.hunger_level === 100 ? 0 : 10 
+                this.sadness_level += this.sadness_level === 100 ? 0 : 10 
                 if (this.hunger_level > 70) 
-                    this.strength_level -= 5
+                    this.strength_level -= this.strength_level === 0 ? 0 : 5 
             }
 
             this.saveDB()
-        }, 120 * 1000)
+        }, 60 * 60 * 1000) // 1 hour
 
         tamagochis[user.id] = this
     }

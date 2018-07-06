@@ -13,6 +13,7 @@
     "erlpack": "github:discordapp/erlpack",
     "node-opus": "^0.3.0",
     "simple-youtube-api": "^5.0.2",
+    "spotify-web-api-node": "^3.1.1",
     "sqlite3": "^4.0.1",
     "telegraf": "^3.21.2",
     "underscore": "^1.9.1",

@@ -94,6 +94,7 @@ class MusicHandler extends EventEmitter {
     playFromInfo(info) {
         const voiceChannel = info.guildMember.voiceChannel
         voiceChannel.join().then(connection => {
+            info.connection = connection
             info.stream = ytdl(info.url, { fiter: 'audioonly' })
             info.dispatcher = connection.play(info.stream, { volume: false, passes: 3 })
 
@@ -122,10 +123,9 @@ class MusicHandler extends EventEmitter {
         if (this.queue.length === 0) {
             this.currentMusic.guildMember.voiceChannel.leave()
             this.currentMusic = {}
-            return
+        } else {
+            this.playFromInfo(this.queue.shift())
         }
-
-        this.playFromInfo(this.queue.shift())
     }
 
     endMusic() {

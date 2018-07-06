@@ -97,12 +97,12 @@ class MusicHandler extends EventEmitter {
             info.stream = ytdl(info.url, { fiter: 'audioonly' })
             info.dispatcher = connection.play(info.stream, { volume: false, passes: 3 })
 
-            info.dispatcher.on('start', () => {
+            info.dispatcher.once('start', () => {
                 this.currentMusic = info
                 this.emit('playing', info)
             })
 
-            info.dispatcher.on('end', () => {
+            info.dispatcher.once('end', () => {
                 this.skipMusic()
             })
 

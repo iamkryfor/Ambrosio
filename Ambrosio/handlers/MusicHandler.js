@@ -118,11 +118,15 @@ class MusicHandler extends EventEmitter {
             return
 
         if (this.queue.length === 0) {
-            this.currentMusic.guildMember.voiceChannel.leave()
+            const voiceChannel = this.currentMusic.guildMember.voiceChannel
+            if (voiceChannel)
+                voiceChannel.leave()
+                
             this.currentMusic = {}
-        } else {
-            this.playFromInfo(this.queue.shift())
-        }
+            return
+        } 
+
+        this.playFromInfo(this.queue.shift())
     }
 
     endMusic() {

@@ -28,7 +28,7 @@ class TamagochiHandler extends EventEmitter {
                 return
 
             if (this.hunger_level === 100 && this.strength_level === 0) {
-                TamagochiHandler._sendTamagochiMessage(user.dmChannel, 'Your tamagochi died from hunger!')
+                TamagochiHandler._sendTamagochiMessage(this.user.dmChannel, 'Your tamagochi died from hunger!')
                 this.hunger_level = 0.0
                 this.sadness_level = 0.0
                 this.strength_level = 0.0
@@ -41,7 +41,7 @@ class TamagochiHandler extends EventEmitter {
             }
 
             this.saveDB()
-        }, 60 * 60 * 1000) // 1 hour
+        }, 120 * 60 * 1000) // 2 hours
 
         tamagochis[user.id] = this
     }
@@ -126,6 +126,9 @@ class TamagochiHandler extends EventEmitter {
     }
     
     static _sendTamagochiMessage(channel, m) {
+        if (!channel)
+            return
+
         channel.send(`***TAMAGOCHI:*** ${m}`).then(message => {
             message.delete({ timeout: 7000 }).catch(err => {})
         })

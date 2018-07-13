@@ -22,7 +22,11 @@ class MusicHandler extends EventEmitter {
         MusicHandlers[guild.id] = this
     }
 
-    playMusic(query, textChannel, guildMember, isPlaylist = false) {
+    playMusic(query, textChannel, guildMember, voiceChannel, isPlaylist = false) {
+        voiceChannel = voiceChannel ? voiceChannel : guildMember.voiceChannel
+        if (!voiceChannel)
+            return
+        
         if (!ytdl.validateURL(query)) {
             const playlistURL = /(?:https:\/\/open\.spotify\.com\/user\/)([A-z0-9]+)(?:\/playlist\/)([A-z0-9]+)/gi.exec(query)
             const playlistURI = /(?:spotify:user:)([A-z0-9]+)(?::playlist:)([A-z0-9]+)/gi.exec(query)
@@ -42,11 +46,11 @@ class MusicHandler extends EventEmitter {
     
                     const res = results[0]
                     if (res.type === 'video') {
-                        this.playMusic(res.url, textChannel, guildMember, isPlaylist)
+                        this.playMusic(res.url, textChannel, guildMember, voiceChannel, isPlaylist)
                     } else if (res.type === 'playlist') {
                         this.yt.getPlaylistByID(res.id).then(pl => {
                             pl.getVideos(30).then(videos => {
-                                videos.forEach(video => this.playMusic(video.url, textChannel, guildMember, true))
+                                videos.forEach(video => this.playMusic(video.url, textChannel, guildMember, voiceChannel, true))
                             }) 
                         })
                     }
@@ -73,7 +77,8 @@ class MusicHandler extends EventEmitter {
                 },
                 length: info.length_seconds,
                 textChannel,
-                guildMember
+                guildMember,
+                voiceChannel
             }
 
             if (this.playing) {
@@ -90,7 +95,7 @@ class MusicHandler extends EventEmitter {
     }
 
     playFromInfo(info) {
-        const voiceChannel = info.guildMember.voiceChannel
+        const voiceChannel = info.voiceChannel
         voiceChannel.join().then(connection => {
             info.stream = ytdl(info.url, { fiter: 'audioonly' })
             info.dispatcher = connection.play(info.stream, { volume: false, passes: 3 })
@@ -118,7 +123,7 @@ class MusicHandler extends EventEmitter {
             return
 
         if (this.queue.length === 0) {
-            const voiceChannel = this.currentMusic.guildMember.voiceChannel
+            const voiceChannel = this.currentMusic.voiceChannel
             if (voiceChannel)
                 voiceChannel.leave()
                 

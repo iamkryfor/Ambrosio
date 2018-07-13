@@ -18,7 +18,7 @@ class PlayCommand extends Command {
         const textChannel = message.channel
         const guildMember = message.member
         
-        MusicHandler.getHandler(guild, this.config).playMusic(args, textChannel, guildMember)
+        MusicHandler.getHandler(guild, this.config).playMusic(args, textChannel, guildMember, guildMember.voiceChannel)
     }
 }
 
